@@ -700,7 +700,7 @@ class IssuesProcessor {
           }
         }
       `;
-                let issues = [];
+                const issues = [];
                 let endCursor = null;
                 let hasNextPage = true;
                 while (hasNextPage) {
@@ -711,7 +711,9 @@ class IssuesProcessor {
                     });
                     hasNextPage = resp.repository.issues.pageInfo.hasNextPage;
                     endCursor = resp.repository.issues.pageInfo.endCursor;
-                    issues = issues.concat(resp.repository.issues.nodes.map(node => new issue_1.Issue(this.options, node)));
+                    for (const issue of resp.repository.issues.nodes.map(node => new issue_1.Issue(this.options, node))) {
+                        issues.push(issue);
+                    }
                 }
                 return issues;
             }
