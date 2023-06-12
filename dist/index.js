@@ -700,6 +700,7 @@ class IssuesProcessor {
           }
         }
       `;
+                this.operations.consumeOperation();
                 const issues = [];
                 let endCursor = null;
                 let hasNextPage = true;

@@ -591,6 +591,7 @@ export class IssuesProcessor {
           }
         }
       `;
+      this.operations.consumeOperation();
       const issues: Issue[] = [];
       let endCursor = null;
       let hasNextPage = true;
