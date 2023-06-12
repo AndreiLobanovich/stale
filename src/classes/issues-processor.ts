@@ -591,7 +591,7 @@ export class IssuesProcessor {
           }
         }
       `;
-      const issues: Issue[] = [];
+      let issues: Issue[] = [];
       let endCursor = null;
       let hasNextPage = true;
       while (hasNextPage) {
@@ -602,7 +602,7 @@ export class IssuesProcessor {
         });
         hasNextPage = resp.repository.issues.pageInfo.hasNextPage;
         endCursor = resp.repository.issues.pageInfo.endCursor;
-        issues.concat(
+        issues = issues.concat(
           resp.repository.issues.nodes.map(
             node => new Issue(this.options, node)
           )
