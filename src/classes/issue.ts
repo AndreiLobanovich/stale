@@ -34,7 +34,7 @@ export class Issue implements IIssue {
     this.number = issue.number;
     this.created_at = issue.created_at;
     this.updated_at = issue.updated_at;
-    this.labels = mapLabels(issue.labels);
+    this.labels = 'nodes' in issue.labels ?  mapLabels(issue.labels.nodes as string[]) : mapLabels(issue.labels);
     this.isPinned = 'isPinned' in issue ? issue.isPinned : null;
     this.pull_request = issue.pull_request;
     this.state = issue.state;

@@ -612,7 +612,6 @@ export class IssuesProcessor {
     } catch (error) {
       throw Error(`Getting issues was blocked by the error: ${error.message}`);
     }
-    return [];
   }
 
   // grab issues from github in batches of 100
