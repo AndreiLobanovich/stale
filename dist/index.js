@@ -271,7 +271,7 @@ class Issue {
         this.number = issue.number;
         this.created_at = issue.created_at;
         this.updated_at = issue.updated_at;
-        this.labels = mapLabels(issue.labels);
+        this.labels = 'nodes' in issue.labels ? mapLabels(issue.labels.nodes) : mapLabels(issue.labels);
         this.isPinned = 'isPinned' in issue ? issue.isPinned : null;
         this.pull_request = issue.pull_request;
         this.state = issue.state;
@@ -718,7 +718,6 @@ class IssuesProcessor {
             catch (error) {
                 throw Error(`Getting issues was blocked by the error: ${error.message}`);
             }
-            return [];
         });
     }
     // grab issues from github in batches of 100
