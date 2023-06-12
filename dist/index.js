@@ -423,7 +423,7 @@ class IssuesProcessor {
             // get the next batch of issues
             // const issues: Issue[] = await this.getIssues(page);
             const issues = yield this.getIssuesFromGraphql();
-            core.debug(`!!!!!${JSON.stringify(issues, null, 2)}!!!!!!`);
+            core.debug(`!!!!!${JSON.stringify(issues)}!!!!!!`);
             if (issues.length <= 0) {
                 this._logger.info(logger_service_1.LoggerService.green(`No more issues found to process. Exiting...`));
                 (_a = this.statistics) === null || _a === void 0 ? void 0 : _a.setOperationsCount(this.operations.getConsumedOperationsCount()).logStats();
