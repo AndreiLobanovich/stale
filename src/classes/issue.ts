@@ -14,6 +14,7 @@ export class Issue implements IIssue {
   created_at: IsoDateString;
   updated_at: IsoDateString;
   readonly labels: ILabel[];
+  readonly isPinned: boolean | null;
   readonly pull_request: object | null | undefined;
   readonly state: string | 'closed' | 'open';
   readonly locked: boolean;
@@ -34,6 +35,7 @@ export class Issue implements IIssue {
     this.created_at = issue.created_at;
     this.updated_at = issue.updated_at;
     this.labels = mapLabels(issue.labels);
+    this.isPinned = 'isPinned' in issue ? issue.isPinned : null;
     this.pull_request = issue.pull_request;
     this.state = issue.state;
     this.locked = issue.locked;

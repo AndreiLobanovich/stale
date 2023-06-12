@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import {context, getOctokit} from '@actions/github';
 import {GitHub} from '@actions/github/lib/utils';
+import {graphql} from '@octokit/graphql';
 import {Option} from '../enums/option';
 import {getHumanizedDate} from '../functions/dates/get-humanized-date';
 import {isDateMoreRecentThan} from '../functions/dates/is-date-more-recent-than';
@@ -26,6 +27,7 @@ import {Statistics} from './statistics';
 import {LoggerService} from '../services/logger.service';
 import {OctokitIssue} from '../interfaces/issue';
 import {retry} from '@octokit/plugin-retry';
+import {IGraphQlResponse} from '../interfaces/graphqlResponse';
 
 /***
  * Handle processing of issues for staleness/closure.
@@ -63,6 +65,7 @@ export class IssuesProcessor {
 
   readonly operations: StaleOperations;
   readonly client: InstanceType<typeof GitHub>;
+  readonly graphqlClient: typeof graphql;
   readonly options: IIssuesProcessorOptions;
   readonly staleIssues: Issue[] = [];
   readonly closedIssues: Issue[] = [];
@@ -76,6 +79,11 @@ export class IssuesProcessor {
   constructor(options: IIssuesProcessorOptions) {
     this.options = options;
     this.client = getOctokit(this.options.repoToken, undefined, retry);
+    this.graphqlClient = graphql.defaults({
+      headers: {
+        authorization: `token ${this.options.repoToken}`
+      }
+    });
     this.operations = new StaleOperations(this.options);
 
     this._logger.info(
@@ -100,8 +108,9 @@ export class IssuesProcessor {
 
   async processIssues(page: Readonly<number> = 1): Promise<number> {
     // get the next batch of issues
-    const issues: Issue[] = await this.getIssues(page);
-
+    // const issues: Issue[] = await this.getIssues(page);
+    const issues = await this.getIssuesFromGraphql();
+    core.debug(`!!!!!${issues[0]}!!!!!!`);
     if (issues.length <= 0) {
       this._logger.info(
         LoggerService.green(`No more issues found to process. Exiting...`)
@@ -546,6 +555,66 @@ export class IssuesProcessor {
     }
   }
 
+  async getIssuesFromGraphql(): Promise<Issue[]> {
+    try {
+      const query = `
+        query ($owner: String!, $repo: String!, $endCursor: String) {
+          repository(owner: $owner, name: $repo) {
+            issues(first: 100, after: $endCursor) {
+              nodes {
+                title
+                number
+                createdAt
+                updatedAt
+                labels(first: 10) {
+                  nodes {
+                    name
+                  }
+                }
+                isPinned
+                state
+                locked
+                milestone {
+                  title
+                }
+                assignees(first: 100) {
+                  nodes {
+                    login
+                  }
+                }
+              }
+              pageInfo {
+                endCursor
+                hasNextPage
+              }
+            }
+          }
+        }
+      `;
+      const issues: Issue[] = [];
+      let endCursor = null;
+      let hasNextPage = true;
+      while (hasNextPage) {
+        const resp: IGraphQlResponse = await this.graphqlClient(query, {
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          endCursor: endCursor
+        });
+        hasNextPage = resp.repository.issues.pageInfo.hasNextPage;
+        endCursor = resp.repository.issues.pageInfo.endCursor;
+        issues.concat(
+          resp.repository.issues.nodes.map(
+            node => new Issue(this.options, node)
+          )
+        );
+      }
+      return issues;
+    } catch (error) {
+      throw Error(`Getting issues was blocked by the error: ${error.message}`);
+    }
+    return [];
+  }
+
   // grab issues from github in batches of 100
   async getIssues(page: number): Promise<Issue[]> {
     try {
@@ -559,7 +628,6 @@ export class IssuesProcessor {
         page
       });
       this.statistics?.incrementFetchedItemsCount(issueResult.data.length);
-      core.debug(issueResult as unknown as string)
       return issueResult.data.map(
         (issue: Readonly<OctokitIssue>): Issue => new Issue(this.options, issue)
       );

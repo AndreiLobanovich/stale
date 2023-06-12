@@ -9,6 +9,7 @@ export interface IIssue {
   created_at: IsoDateString;
   updated_at: IsoDateString;
   labels: ILabel[];
+  isPinned: boolean | null;
   pull_request?: object | null;
   state: string;
   locked: boolean;
