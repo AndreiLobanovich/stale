@@ -110,6 +110,7 @@ export class IssuesProcessor {
     // get the next batch of issues
     // const issues: Issue[] = await this.getIssues(page);
     const issues = await this.getIssuesFromGraphql();
+    core.debug(`!!!!!${JSON.stringify(issues[0])}!!!!!!`);
     if (issues.length <= 0) {
       this._logger.info(
         LoggerService.green(`No more issues found to process. Exiting...`)
