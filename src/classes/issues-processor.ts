@@ -603,6 +603,7 @@ export class IssuesProcessor {
         });
         hasNextPage = resp.repository.issues.pageInfo.hasNextPage;
         endCursor = resp.repository.issues.pageInfo.endCursor;
+        core.info(`!!!${JSON.stringify(resp)}****`)
         for (const issue of resp.repository.issues.nodes.map(node => new Issue(this.options, node))) {
           issues.push(issue)
         }
