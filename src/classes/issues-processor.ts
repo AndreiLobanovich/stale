@@ -607,6 +607,7 @@ export class IssuesProcessor {
           issues.push(issue)
         }
       }
+      this.statistics?.incrementFetchedItemsCount(issues.length)
       return issues;
     } catch (error) {
       throw Error(`Getting issues was blocked by the error: ${error.message}`);

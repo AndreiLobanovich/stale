@@ -664,6 +664,7 @@ class IssuesProcessor {
         });
     }
     getIssuesFromGraphql() {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const query = `
@@ -716,6 +717,7 @@ class IssuesProcessor {
                         issues.push(issue);
                     }
                 }
+                (_a = this.statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsCount(issues.length);
                 return issues;
             }
             catch (error) {
