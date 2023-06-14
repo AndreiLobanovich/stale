@@ -269,8 +269,8 @@ class Issue {
         this._options = options;
         this.title = issue.title;
         this.number = issue.number;
-        this.created_at = issue.created_at;
-        this.updated_at = issue.updated_at;
+        this.created_at = 'createdAt' in issue ? issue.createdAt : issue.created_at;
+        this.updated_at = 'updatedAt' in issue ? issue.updatedAt : issue.updated_at;
         this.labels = 'nodes' in issue.labels ? mapLabels(issue.labels.nodes) : mapLabels(issue.labels);
         this.isPinned = 'isPinned' in issue ? issue.isPinned : null;
         this.pull_request = issue.pull_request;
@@ -713,7 +713,6 @@ class IssuesProcessor {
                     });
                     hasNextPage = resp.repository.issues.pageInfo.hasNextPage;
                     endCursor = resp.repository.issues.pageInfo.endCursor;
-                    core.info(`!!!${JSON.stringify(resp)}****`);
                     for (const issue of resp.repository.issues.nodes.map(node => new issue_1.Issue(this.options, node))) {
                         issues.push(issue);
                     }
