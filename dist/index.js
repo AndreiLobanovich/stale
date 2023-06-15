@@ -480,6 +480,7 @@ class IssuesProcessor {
             const daysBeforeStale = issue.isPullRequest
                 ? this._getDaysBeforePrStale()
                 : this._getDaysBeforeIssueStale();
+            const isPinned = issue.isPinned;
             if (issue.state === 'closed') {
                 issueLogger.info(`Skipping this $$type because it is closed`);
                 IssuesProcessor._endIssueProcessing(issue);
@@ -516,7 +517,7 @@ class IssuesProcessor {
                 issueLogger.info(logger_service_1.LoggerService.white('└──'), `Continuing the process for this $$type`);
             }
             issueLogger.info(`Days before $$type stale: ${logger_service_1.LoggerService.cyan(daysBeforeStale)}`);
-            const shouldMarkAsStale = (0, should_mark_when_stale_1.shouldMarkWhenStale)(daysBeforeStale);
+            const shouldMarkAsStale = (0, should_mark_when_stale_1.shouldMarkWhenStale)(daysBeforeStale, isPinned);
             // Try to remove the close label when not close/locked issue or PR
             yield this._removeCloseLabel(issue, closeLabel);
             if (this.options.startDate) {
@@ -2166,8 +2167,8 @@ exports.isPullRequest = isPullRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.shouldMarkWhenStale = void 0;
-function shouldMarkWhenStale(daysBeforeStale) {
-    return daysBeforeStale >= 0;
+function shouldMarkWhenStale(daysBeforeStale, isPinned) {
+    return daysBeforeStale >= 0 || !!isPinned;
 }
 exports.shouldMarkWhenStale = shouldMarkWhenStale;
 

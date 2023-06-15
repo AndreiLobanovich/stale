@@ -1,5 +1,6 @@
 export function shouldMarkWhenStale(
-  daysBeforeStale: Readonly<number>
+  daysBeforeStale: Readonly<number>,
+  isPinned: boolean | null
 ): boolean {
-  return daysBeforeStale >= 0;
+  return daysBeforeStale >= 0 || !!isPinned;
 }

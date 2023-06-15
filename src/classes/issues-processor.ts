@@ -224,6 +224,7 @@ export class IssuesProcessor {
     const daysBeforeStale: number = issue.isPullRequest
       ? this._getDaysBeforePrStale()
       : this._getDaysBeforeIssueStale();
+    const isPinned: boolean | null = issue.isPinned;
 
     if (issue.state === 'closed') {
       issueLogger.info(`Skipping this $$type because it is closed`);
@@ -296,7 +297,7 @@ export class IssuesProcessor {
       `Days before $$type stale: ${LoggerService.cyan(daysBeforeStale)}`
     );
 
-    const shouldMarkAsStale: boolean = shouldMarkWhenStale(daysBeforeStale);
+    const shouldMarkAsStale: boolean = shouldMarkWhenStale(daysBeforeStale, isPinned);
 
     // Try to remove the close label when not close/locked issue or PR
     await this._removeCloseLabel(issue, closeLabel);
