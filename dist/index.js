@@ -417,20 +417,19 @@ class IssuesProcessor {
             this.statistics = new statistics_1.Statistics();
         }
     }
-    processIssues(page = 1) {
+    processIssues(endCursor = null, hasNextPage = true) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             // get the next batch of issues
-            // const issues: Issue[] = await this.getIssues(page);
-            const issues = yield this.getIssuesFromGraphql();
-            core.debug(`!!!!!${JSON.stringify(issues[0])}!!!!!!`);
+            let issues;
+            [endCursor, hasNextPage, issues] = yield this.getIssuesFromGraphql(endCursor, hasNextPage);
             if (issues.length <= 0) {
                 this._logger.info(logger_service_1.LoggerService.green(`No more issues found to process. Exiting...`));
                 (_a = this.statistics) === null || _a === void 0 ? void 0 : _a.setOperationsCount(this.operations.getConsumedOperationsCount()).logStats();
                 return this.operations.getRemainingOperationsCount();
             }
             else {
-                this._logger.info(`${logger_service_1.LoggerService.yellow('Processing the batch of issues ')} ${logger_service_1.LoggerService.cyan(`#${page}`)} ${logger_service_1.LoggerService.yellow(' containing ')} ${logger_service_1.LoggerService.cyan(issues.length)} ${logger_service_1.LoggerService.yellow(` issue${issues.length > 1 ? 's' : ''}...`)}`);
+                this._logger.info(`${logger_service_1.LoggerService.yellow('Processing the batch of issues ')} ${logger_service_1.LoggerService.cyan(`#${1}`)} ${logger_service_1.LoggerService.yellow(' containing ')} ${logger_service_1.LoggerService.cyan(issues.length)} ${logger_service_1.LoggerService.yellow(` issue${issues.length > 1 ? 's' : ''}...`)}`);
             }
             const labelsToRemoveWhenStale = (0, words_to_list_1.wordsToList)(this.options.labelsToRemoveWhenStale);
             const labelsToAddWhenUnstale = (0, words_to_list_1.wordsToList)(this.options.labelsToAddWhenUnstale);
@@ -451,9 +450,9 @@ class IssuesProcessor {
                 (_b = this.statistics) === null || _b === void 0 ? void 0 : _b.setOperationsCount(this.operations.getConsumedOperationsCount()).logStats();
                 return 0;
             }
-            this._logger.info(`${logger_service_1.LoggerService.green('Batch ')} ${logger_service_1.LoggerService.cyan(`#${page}`)} ${logger_service_1.LoggerService.green(' processed.')}`);
+            this._logger.info(`${logger_service_1.LoggerService.green('Batch ')} ${logger_service_1.LoggerService.cyan(`#${1}`)} ${logger_service_1.LoggerService.green(' processed.')}`);
             // Do the next batch
-            return this.processIssues(page + 1);
+            return this.processIssues(endCursor, hasNextPage);
         });
     }
     processIssue(issue, labelsToAddWhenUnstale, labelsToRemoveWhenUnstale, labelsToRemoveWhenStale) {
@@ -663,7 +662,7 @@ class IssuesProcessor {
             }
         });
     }
-    getIssuesFromGraphql() {
+    getIssuesFromGraphql(endCursor, hasNextPage) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -703,9 +702,7 @@ class IssuesProcessor {
       `;
                 this.operations.consumeOperation();
                 const issues = [];
-                let endCursor = null;
-                let hasNextPage = true;
-                while (hasNextPage) {
+                if (hasNextPage) {
                     const resp = yield this.graphqlClient(query, {
                         owner: github_1.context.repo.owner,
                         repo: github_1.context.repo.repo,
@@ -716,9 +713,9 @@ class IssuesProcessor {
                     for (const issue of resp.repository.issues.nodes.map(node => new issue_1.Issue(this.options, node))) {
                         issues.push(issue);
                     }
+                    (_a = this.statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsCount(issues.length);
                 }
-                (_a = this.statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsCount(issues.length);
-                return issues;
+                return [endCursor, hasNextPage, issues];
             }
             catch (error) {
                 throw Error(`Getting issues was blocked by the error: ${error.message}`);

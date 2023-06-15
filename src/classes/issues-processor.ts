@@ -106,11 +106,11 @@ export class IssuesProcessor {
     }
   }
 
-  async processIssues(page: Readonly<number> = 1): Promise<number> {
+  async processIssues(endCursor: string | null = null, hasNextPage = true): Promise<number> {
     // get the next batch of issues
-    // const issues: Issue[] = await this.getIssues(page);
-    const issues = await this.getIssuesFromGraphql();
-    core.debug(`!!!!!${JSON.stringify(issues[0])}!!!!!!`);
+
+    let issues: Issue[];
+    [endCursor, hasNextPage, issues] = await this.getIssuesFromGraphql(endCursor, hasNextPage);
     if (issues.length <= 0) {
       this._logger.info(
         LoggerService.green(`No more issues found to process. Exiting...`)
@@ -124,7 +124,7 @@ export class IssuesProcessor {
       this._logger.info(
         `${LoggerService.yellow(
           'Processing the batch of issues '
-        )} ${LoggerService.cyan(`#${page}`)} ${LoggerService.yellow(
+        )} ${LoggerService.cyan(`#${1}`)} ${LoggerService.yellow(
           ' containing '
         )} ${LoggerService.cyan(issues.length)} ${LoggerService.yellow(
           ` issue${issues.length > 1 ? 's' : ''}...`
@@ -182,12 +182,12 @@ export class IssuesProcessor {
 
     this._logger.info(
       `${LoggerService.green('Batch ')} ${LoggerService.cyan(
-        `#${page}`
+        `#${1}`
       )} ${LoggerService.green(' processed.')}`
     );
 
     // Do the next batch
-    return this.processIssues(page + 1);
+    return this.processIssues(endCursor, hasNextPage);
   }
 
   async processIssue(
@@ -555,7 +555,7 @@ export class IssuesProcessor {
     }
   }
 
-  async getIssuesFromGraphql(): Promise<Issue[]> {
+  async getIssuesFromGraphql(endCursor: string | null, hasNextPage: boolean): Promise<[string | null, boolean, Issue[]]> {
     try {
       const query = `
         query ($owner: String!, $repo: String!, $endCursor: String) {
@@ -593,9 +593,7 @@ export class IssuesProcessor {
       `;
       this.operations.consumeOperation();
       const issues: Issue[] = [];
-      let endCursor = null;
-      let hasNextPage = true;
-      while (hasNextPage) {
+      if (hasNextPage) {
         const resp: IGraphQlResponse = await this.graphqlClient(query, {
           owner: context.repo.owner,
           repo: context.repo.repo,
@@ -606,9 +604,9 @@ export class IssuesProcessor {
         for (const issue of resp.repository.issues.nodes.map(node => new Issue(this.options, node))) {
           issues.push(issue)
         }
-      }
-      this.statistics?.incrementFetchedItemsCount(issues.length)
-      return issues;
+        this.statistics?.incrementFetchedItemsCount(issues.length)
+    }
+      return [endCursor, hasNextPage, issues];
     } catch (error) {
       throw Error(`Getting issues was blocked by the error: ${error.message}`);
     }
